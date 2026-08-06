@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Công cụ tạo TDS / MSDS</title>
+<style>
+  :root{
+    --green:#3F6B4F; --green-d:#2E4F3B; --bg:#F4F7F4; --card:#ffffff;
+    --border:#DCE4DD; --text:#1c2733; --muted:#66738A; --accent-bg:#E8F0E9;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Arial,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);}
+  header{background:var(--green);color:#fff;padding:22px 28px;}
+  header h1{margin:0;font-size:22px;font-weight:600;}
+  header p{margin:4px 0 0;font-size:13px;color:#dcece0;}
+  .wrap{max-width:1300px;margin:0 auto;padding:22px 24px 60px;display:grid;grid-template-columns:400px 1fr;gap:20px;}
+  @media (max-width:980px){.wrap{grid-template-columns:1fr;}}
+  .panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;height:fit-content;}
+  .panel h3{margin:0 0 12px;font-size:14.5px;color:var(--green);}
+  .tabs{display:flex;gap:8px;margin-bottom:14px;}
+  .tab{flex:1;text-align:center;padding:9px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);background:#fff;}
+  .tab.active{background:var(--green);color:#fff;border-color:var(--green);}
+  .subtabs{display:flex;gap:8px;margin-bottom:14px;}
+  .subtab{flex:1;text-align:center;padding:7px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);background:#fff;}
+  .subtab.active{background:var(--accent-bg);color:var(--green-d);border-color:var(--green);}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;}
+  input[type=text],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;}
+  textarea{resize:vertical;min-height:54px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .btn{margin-top:14px;width:100%;padding:11px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;}
+  .btn:hover{background:var(--green-d);}
+  .btn.secondary{background:#fff;color:var(--green);border:1px solid var(--green);}
+  .btn.secondary:hover{background:var(--accent-bg);}
+  .note{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5;}
+  .formula-toolbar{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+  .formula-toolbar button{padding:5px 10px;border:1px solid var(--border);background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:var(--green-d);}
+  .formula-toolbar button:hover{background:var(--accent-bg);}
+  .formula-input{min-height:38px;border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;background:#fff;}
+  .formula-input.rich-section{min-height:70px;}
+  .editable-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px;table-layout:fixed;}
+  .editable-table td,.editable-table th{border:1px solid #999;padding:6px 9px;text-align:left;min-width:40px;min-height:20px;resize:both;overflow:auto;}
+  .editable-table th{background:#eef3ee;}
+  .formula-input:focus{outline:2px solid var(--green);outline-offset:-1px;}
+  .img-preview-wrap{margin-top:8px;text-align:center;}
+  .img-preview-wrap img{max-width:100%;max-height:140px;border:1px solid var(--border);border-radius:6px;}
+  .img-remove{display:block;margin:6px auto 0;padding:4px 10px;font-size:11px;border:1px solid #c66;color:#c33;background:#fff;border-radius:6px;cursor:pointer;}
+  .status{font-size:12px;margin-top:6px;}
+  .status.ok{color:#0f6e56;}
+  .status.err{color:#a32d2d;}
+  .preview-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:0;overflow:hidden;}
+  .preview-toolbar{background:var(--accent-bg);padding:12px 20px;font-size:12.5px;color:var(--green-d);font-weight:600;border-bottom:1px solid var(--border);}
+  #preview{padding:36px 44px;min-height:600px;font-family:'Times New Roman',serif;color:#111;}
+  #preview h1{font-size:23px;text-align:center;color:var(--green-d);margin-bottom:6px;letter-spacing:.3px;}
+  #preview h2{font-size:17px;color:var(--green-d);border-bottom:2px solid var(--green);padding-bottom:5px;margin-top:24px;}
+  #preview .sub-center{text-align:center;font-size:21px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--green),var(--green-d));margin:0 0 24px;padding:12px 20px;border-radius:10px;letter-spacing:.4px;box-shadow:0 2px 8px rgba(46,79,59,.25);}
+  #preview table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14.5px;}
+  #preview td,#preview th{border:1px solid #999;padding:8px 12px;text-align:left;vertical-align:top;}
+  #preview th{background:#eef3ee;width:38%;}
+  #preview .sec-body{font-size:14.5px;line-height:1.7;white-space:pre-wrap;padding:6px 2px;}
+  #preview .empty-hint{color:#999;font-style:italic;text-align:center;padding:60px 0;font-family:Arial;}
+
+  @media print{
+    header, .panel, .preview-toolbar{display:none !important;}
+    .wrap{display:block !important; padding:0 !important; margin:0 !important; max-width:none !important;}
+    .preview-wrap{border:none;box-shadow:none;}
+    #preview{padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    #preview *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    table, tr, .sec-body, h2, img{page-break-inside:avoid;}
+    h2{page-break-after:avoid;}
+    @page{size:A4;margin:18mm;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Công cụ tạo TDS / MSDS</h1>
+  <p>Tự tạo tài liệu TDS &amp; MSDS cho nguyên liệu phân bón, thuốc BVTV, chất ĐHST, phụ gia — xuất file PDF</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="tabs">
+      <div class="tab active" id="tabTDS" onclick="setDocType('tds')">Tạo TDS</div>
+      <div class="tab" id="tabMSDS" onclick="setDocType('msds')">Tạo MSDS</div>
+    </div>
+
+    <div id="msdsModeWrap" style="display:none;">
+      <div class="subtabs">
+        <div class="subtab active" id="modeFull" onclick="setMsdsMode('full')">Đầy đủ 16 mục (GHS)</div>
+        <div class="subtab" id="modeShort" onclick="setMsdsMode('short')">Rút gọn</div>
+      </div>
+    </div>
+
+    <h3>Nguồn dữ liệu</h3>
+    <div class="subtabs">
+      <div class="subtab active" id="srcManual" onclick="setSource('manual')">Nhập tay</div>
+      <div class="subtab" id="srcSheet" onclick="setSource('sheet')">Từ Google Sheet</div>
+    </div>
+
+    <div id="sheetPickerWrap" style="display:none;">
+      <label>Chọn nguyên liệu có sẵn</label>
+      <select id="sheetPicker" onchange="applySheetPick()"><option value="">— Chọn —</option></select>
+      <div class="status" id="sheetStatus"></div>
+    </div>
+
+    <h3 style="margin-top:18px;">Thông tin chung</h3>
+    <div id="formFields"></div>
+
+    <button class="btn" onclick="exportWord()" id="exportBtn">⬇ Xuất file Word (.doc)</button>
+    <button class="btn secondary" onclick="window.print()">🖨 Xuất PDF (In → Lưu PDF)</button>
+    <button class="btn secondary" onclick="resetForm()">Xóa form, nhập lại</button>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn secondary" style="flex:1;font-size:12px;" onclick="saveTemplate()">💾 Lưu làm mẫu</button>
+      <button class="btn secondary" style="flex:1;font-size:12px;" onclick="loadTemplate()">📂 Tải mẫu</button>
+    </div>
+    <div class="note" id="templateNote"></div>
+    <div class="note"><b>Xuất PDF:</b> bấm nút "In → Lưu PDF" → hộp thoại in hiện ra → chọn máy in <b>"Save as PDF"</b> → bấm <b>"More settings"</b> (Cài đặt khác) → tắt <b>"Headers and footers"</b> (Tiêu đề và chân trang) để không hiện link web/ngày giờ thừa → bấm Save. Màu nền/màu chữ giờ đã tự in đúng, không cần bật thêm gì. <br><b>Xuất Word:</b> dùng khi cần chỉnh sửa thêm nội dung sau khi tải về.</div>
+  </div>
+
+  <div class="preview-wrap">
+    <div class="preview-toolbar">Xem trước tài liệu — cập nhật theo thời gian thực khi bạn nhập</div>
+    <div id="preview"><div class="empty-hint">Điền thông tin bên trái để xem trước tài liệu tại đây...</div></div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1T7wsOuDkSlvq2n7bE7yG9UzWiIlXkMmAO98r5D7xTjU/gviz/tq?tqx=out:csv&gid=0";
+const SHEET_KEYS = ["stt","group","name","iupac","content","cas","appearance","solubility","ph","moisture","melting","classify","toxclass","tds","msds","patent","updated","note"];
+
+let docType = 'tds';      // 'tds' | 'msds'
+let msdsMode = 'full';    // 'full' | 'short'
+let source = 'manual';    // 'manual' | 'sheet'
+let SHEET_DATA = [];
+
+// ---------- Field definitions ----------
+const TDS_FIELDS = [
+  {id:'name', label:'Tên thông thường', type:'text'},
+  {id:'iupac', label:'Tên IUPAC/INN', type:'text'},
+  {id:'cas', label:'Số CAS', type:'text'},
+  {id:'structureImg', label:'Cấu trúc phân tử', type:'image'},
+  {id:'formula', label:'Công thức hóa học', type:'formula'},
+  {id:'molweight', label:'Khối lượng mol', type:'text'},
+  {id:'classify', label:'Phân loại', type:'text'},
+  {id:'appearance', label:'Ngoại dạng', type:'text'},
+  {id:'solubility', label:'Độ tan', type:'text'},
+  {id:'ph', label:'pH (dung dịch 1%)', type:'text'},
+  {id:'moisture', label:'Độ ẩm', type:'text'},
+  {id:'boiling', label:'Nhiệt độ sôi', type:'text'},
+  {id:'melting', label:'Nhiệt độ nóng chảy', type:'text'},
+  {id:'vaporpressure', label:'Áp suất hơi', type:'text'},
+  {id:'density', label:'Tỷ trọng', type:'formula'},
+  {id:'storage', label:'Điều kiện bảo quản', type:'text'},
+  {id:'note', label:'Ghi chú', type:'textarea'},
+];
+
+const MSDS_COMMON = [
+  {id:'name', label:'Tên nguyên liệu', type:'text'},
+  {id:'group', label:'Nhóm', type:'select', options:['Đa, trung, vi lượng','Điều hòa sinh trưởng','Thuốc BVTV','Phụ gia']},
+  {id:'cas', label:'Số CAS', type:'text'},
+  {id:'manufacturer', label:'Nhà sản xuất / Đơn vị cung cấp', type:'text'},
+  {id:'updated', label:'Ngày biên soạn', type:'text'},
+];
+
+const MSDS_FULL_SECTIONS = [
+  {id:'s1', title:'1. Nhận dạng hóa chất và thông tin nhà cung cấp'},
+  {id:'s2', title:'2. Nhận dạng nguy hiểm'},
+  {id:'s3', title:'3. Thành phần / Thông tin về thành phần', table:true},
+  {id:'s4', title:'4. Biện pháp sơ cứu'},
+  {id:'s5', title:'5. Biện pháp chữa cháy'},
+  {id:'s6', title:'6. Biện pháp ứng phó sự cố tràn đổ'},
+  {id:'s7', title:'7. Xử lý và bảo quản'},
+  {id:'s8', title:'8. Kiểm soát phơi nhiễm / bảo hộ cá nhân'},
+  {id:'s9', title:'9. Tính chất vật lý và hóa học', table:true},
+  {id:'s10', title:'10. Tính ổn định và khả năng phản ứng'},
+  {id:'s11', title:'11. Thông tin độc học', table:true},
+  {id:'s12', title:'12. Thông tin sinh thái'},
+  {id:'s13', title:'13. Biện pháp tiêu hủy / xử lý chất thải'},
+  {id:'s14', title:'14. Thông tin vận chuyển', table:true},
+  {id:'s15', title:'15. Thông tin quy định'},
+  {id:'s16', title:'16. Thông tin khác'},
+];
+
+const MSDS_SHORT_SECTIONS = [
+  {id:'s1', title:'1. Nhận diện hóa chất'},
+  {id:'s2', title:'2. Thành phần nguy hại chính'},
+  {id:'s3', title:'3. Biện pháp sơ cứu'},
+  {id:'s4', title:'4. Biện pháp chữa cháy'},
+  {id:'s5', title:'5. Bảo quản và sử dụng'},
+  {id:'s6', title:'6. Thông tin độc tính'},
+  {id:'s7', title:'7. Thông tin vận chuyển'},
+  {id:'s8', title:'8. Thông tin khác'},
+];
+
+let formData = {};
+
+// ---------- CSV parsing (reuse logic from main app) ----------
+function parseCSV(text){
+  const rows = []; let row = []; let field = ''; let inQuotes = false;
+  for (let i=0;i<text.length;i++){
+    const c = text[i], next = text[i+1];
+    if (inQuotes){
+      if (c === '"' && next === '"'){ field+='"'; i++; }
+      else if (c === '"'){ inQuotes=false; }
+      else { field+=c; }
+    } else {
+      if (c === '"'){ inQuotes=true; }
+      else if (c === ','){ row.push(field); field=''; }
+      else if (c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if (c === '\r'){ }
+      else { field+=c; }
+    }
+  }
+  if (field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=>r.length && r.some(c=>c.trim()!==''));
+}
+function rowsToData(rows){
+  const body = rows.slice(1);
+  return body.map(r=>{ const o={}; SHEET_KEYS.forEach((k,i)=>o[k]=(r[i]||'').trim()); return o; }).filter(o=>o.name);
+}
+
+async function loadSheetData(){
+  const statusEl = document.getElementById('sheetStatus');
+  statusEl.textContent = 'Đang tải danh sách từ Google Sheet...';
+  statusEl.className = 'status';
+  try{
+    const res = await fetch(DEFAULT_SHEET_URL + (DEFAULT_SHEET_URL.includes('?')?'&':'?') + '_=' + Date.now());
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    SHEET_DATA = rowsToData(parseCSV(text));
+    const sel = document.getElementById('sheetPicker');
+    sel.innerHTML = '<option value="">— Chọn —</option>' + SHEET_DATA.map((d,i)=>`<option value="${i}">${d.name.replace(/\n/g,' ')}</option>`).join('');
+    statusEl.textContent = `Đã tải ${SHEET_DATA.length} nguyên liệu.`;
+    statusEl.className = 'status ok';
+  }catch(e){
+    statusEl.textContent = 'Không tải được Google Sheet: ' + e.message;
+    statusEl.className = 'status err';
+  }
+}
+
+function applySheetPick(){
+  const idx = document.getElementById('sheetPicker').value;
+  if(idx === '') return;
+  const d = SHEET_DATA[idx];
+  Object.assign(formData, d);
+  renderForm();
+  renderPreview();
+}
+
+// ---------- UI state switching ----------
+function setDocType(t){
+  docType = t;
+  document.getElementById('tabTDS').classList.toggle('active', t==='tds');
+  document.getElementById('tabMSDS').classList.toggle('active', t==='msds');
+  document.getElementById('msdsModeWrap').style.display = t==='msds' ? 'block':'none';
+  renderForm(); renderPreview();
+}
+function setMsdsMode(m){
+  msdsMode = m;
+  document.getElementById('modeFull').classList.toggle('active', m==='full');
+  document.getElementById('modeShort').classList.toggle('active', m==='short');
+  renderForm(); renderPreview();
+}
+function setSource(s){
+  source = s;
+  document.getElementById('srcManual').classList.toggle('active', s==='manual');
+  document.getElementById('srcSheet').classList.toggle('active', s==='sheet');
+  document.getElementById('sheetPickerWrap').style.display = s==='sheet' ? 'block':'none';
+  if(s==='sheet' && SHEET_DATA.length===0) loadSheetData();
+}
+
+function fieldInput(f){
+  const val = formData[f.id] || '';
+  if(f.type==='select'){
+    return `<select onchange="formData['${f.id}']=this.value;renderPreview()">
+      <option value="">— Chọn —</option>
+      ${f.options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}
+    </select>`;
+  }
+  if(f.type==='textarea'){
+    return `<textarea oninput="formData['${f.id}']=this.value;renderPreview()">${val}</textarea>`;
+  }
+  if(f.type==='image'){
+    const preview = val ? `<div class="img-preview-wrap"><img src="${val}"><button type="button" class="img-remove" onclick="formData['${f.id}']='';renderForm();renderPreview();">Xóa ảnh</button></div>` : '';
+    return `<input type="file" accept="image/*" onchange="handleImageUpload(event,'${f.id}')">${preview}`;
+  }
+  if(f.type==='formula'){
+    return `
+      <div class="formula-toolbar">
+        <button type="button" onmousedown="event.preventDefault()" onclick="applyFormat('superscript')">x²</button>
+        <button type="button" onmousedown="event.preventDefault()" onclick="applyFormat('subscript')">x₂</button>
+        <button type="button" onmousedown="event.preventDefault()" onclick="applyFormat('removeFormat')">Xóa định dạng</button>
+      </div>
+      <div class="formula-input" contenteditable="true" data-field="${f.id}"
+        oninput="formData['${f.id}']=this.innerHTML;renderPreview()">${val}</div>`;
+  }
+  return `<input type="text" value="${val.replace(/"/g,'&quot;')}" oninput="formData['${f.id}']=this.value;renderPreview()">`;
+}
+
+function handleImageUpload(evt, fieldId){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    formData[fieldId] = e.target.result;
+    renderForm();
+    renderPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyFormat(cmd){
+  document.execCommand(cmd, false, null);
+}
+
+function richTextInput(fieldId, showTable){
+  const val = formData[fieldId] || '';
+  return `
+    <div class="formula-toolbar">
+      <button type="button" onmousedown="event.preventDefault()" onclick="applyFormat('bold')"><b>B</b></button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="applyFormat('italic')"><i>I</i></button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="applyFormat('underline')"><u>U</u></button>
+      ${showTable ? `<button type="button" onmousedown="event.preventDefault()" onclick="insertTable('${fieldId}')">⊞ Chèn bảng</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="tableAddRow()">+Dòng</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="tableRemoveRow()">−Dòng</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="tableAddCol()">+Cột</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="tableRemoveCol()">−Cột</button>` : ''}
+      <button type="button" onmousedown="event.preventDefault()" onclick="applyFormat('removeFormat')">Xóa định dạng</button>
+    </div>
+    <div class="formula-input rich-section" contenteditable="true" data-field="${fieldId}"
+      oninput="formData['${fieldId}']=this.innerHTML;renderPreview()">${val}</div>`;
+}
+
+function insertTable(fieldId){
+  const el = document.querySelector(`.formula-input[data-field="${fieldId}"]`);
+  if(!el) return;
+  el.focus();
+  const tableHTML = `<table class="editable-table"><tbody>
+    <tr><th>Cột 1</th><th>Cột 2</th><th>Cột 3</th></tr>
+    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+  </tbody></table><p><br></p>`;
+  document.execCommand('insertHTML', false, tableHTML);
+  formData[fieldId] = el.innerHTML;
+  renderPreview();
+}
+
+// Theo dõi ô đang được chọn trong bảng để thao tác thêm/xóa dòng-cột
+let activeCell = null;
+document.addEventListener('click', function(e){
+  const cell = e.target.closest('.editable-table td, .editable-table th');
+  if(cell) activeCell = cell;
+});
+
+function syncTableField(cell){
+  const wrap = cell.closest('.formula-input[data-field]');
+  if(!wrap) return;
+  const fieldId = wrap.dataset.field;
+  formData[fieldId] = wrap.innerHTML;
+  renderPreview();
+}
+
+function tableAddRow(){
+  if(!activeCell){ alert('Bấm vào 1 ô trong bảng trước.'); return; }
+  const row = activeCell.closest('tr');
+  const newRow = row.cloneNode(true);
+  newRow.querySelectorAll('th').forEach(th=>{ const td=document.createElement('td'); td.innerHTML='&nbsp;'; th.replaceWith(td); });
+  newRow.querySelectorAll('td').forEach(td=>td.innerHTML='&nbsp;');
+  row.after(newRow);
+  syncTableField(activeCell);
+}
+
+function tableRemoveRow(){
+  if(!activeCell){ alert('Bấm vào 1 ô trong bảng trước.'); return; }
+  const row = activeCell.closest('tr');
+  const table = activeCell.closest('table');
+  if(table.querySelectorAll('tr').length <= 1){ alert('Bảng cần ít nhất 1 dòng.'); return; }
+  row.remove();
+  activeCell = null;
+  const wrap = table.closest('.formula-input[data-field]');
+  if(wrap){ formData[wrap.dataset.field] = wrap.innerHTML; renderPreview(); }
+}
+
+function tableAddCol(){
+  if(!activeCell){ alert('Bấm vào 1 ô trong bảng trước.'); return; }
+  const table = activeCell.closest('table');
+  const colIndex = Array.from(activeCell.parentNode.children).indexOf(activeCell);
+  table.querySelectorAll('tr').forEach(tr=>{
+    const refCell = tr.children[colIndex];
+    const newCell = document.createElement(refCell.tagName);
+    newCell.innerHTML = refCell.tagName === 'TH' ? 'Cột mới' : '&nbsp;';
+    refCell.after(newCell);
+  });
+  syncTableField(activeCell);
+}
+
+function tableRemoveCol(){
+  if(!activeCell){ alert('Bấm vào 1 ô trong bảng trước.'); return; }
+  const table = activeCell.closest('table');
+  const colIndex = Array.from(activeCell.parentNode.children).indexOf(activeCell);
+  const firstRowCells = table.querySelector('tr').children.length;
+  if(firstRowCells <= 1){ alert('Bảng cần ít nhất 1 cột.'); return; }
+  table.querySelectorAll('tr').forEach(tr=>{ if(tr.children[colIndex]) tr.children[colIndex].remove(); });
+  activeCell = null;
+  const wrap = table.closest('.formula-input[data-field]');
+  if(wrap){ formData[wrap.dataset.field] = wrap.innerHTML; renderPreview(); }
+}
+
+function renderForm(){
+  const wrap = document.getElementById('formFields');
+  let html = '';
+  if(docType==='tds'){
+    TDS_FIELDS.forEach(f=>{ html += `<label>${f.label}</label>${fieldInput(f)}`; });
+  } else {
+    MSDS_COMMON.forEach(f=>{ html += `<label>${f.label}</label>${fieldInput(f)}`; });
+    const sections = msdsMode==='full' ? MSDS_FULL_SECTIONS : MSDS_SHORT_SECTIONS;
+    html += `<h3 style="margin-top:18px;">Nội dung các mục</h3>`;
+    sections.forEach(s=>{
+      html += `<label>${s.title}</label>${richTextInput(s.id, !!s.table)}`;
+    });
+  }
+  wrap.innerHTML = html;
+}
+
+// ---------- Preview / export document generation ----------
+function esc(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function buildDocumentHTML(){
+  const d = formData;
+  if(docType==='tds'){
+    const rows = TDS_FIELDS.map(f=>{
+      let val;
+      if(f.type==='image'){
+        val = d[f.id] ? `<img src="${d[f.id]}" style="max-width:240px;max-height:180px;display:block;">` : '&nbsp;';
+      } else if(f.type==='formula'){
+        val = d[f.id] || '&nbsp;';
+      } else {
+        val = esc(d[f.id]) || '&nbsp;';
+      }
+      return `<tr><th>${f.label}</th><td>${val}</td></tr>`;
+    }).join('');
+    return `
+      <h1>PHIẾU AN TOÀN KỸ THUẬT (TDS)</h1>
+      <p class="sub-center">${esc(d.name)||'(Chưa đặt tên nguyên liệu)'}</p>
+      <table>${rows}</table>
+    `;
+  } else {
+    const sections = msdsMode==='full' ? MSDS_FULL_SECTIONS : MSDS_SHORT_SECTIONS;
+    const head = `
+      <h1>PHIẾU AN TOÀN HÓA CHẤT (MSDS/SDS)</h1>
+      <p class="sub-center">${esc(d.name)||'(Chưa đặt tên nguyên liệu)'} ${d.cas?(' · CAS '+esc(d.cas)):''}</p>
+      <table>
+        <tr><th>Nhóm</th><td>${esc(d.group)||'&nbsp;'}</td></tr>
+        <tr><th>Nhà sản xuất / cung cấp</th><td>${esc(d.manufacturer)||'&nbsp;'}</td></tr>
+        <tr><th>Ngày biên soạn</th><td>${esc(d.updated)||'&nbsp;'}</td></tr>
+      </table>
+    `;
+    const body = sections.map(s=>`<h2>${s.title}</h2><div class="sec-body">${d[s.id]||'—'}</div>`).join('');
+    return head + body;
+  }
+}
+
+function renderPreview(){
+  document.getElementById('preview').innerHTML = buildDocumentHTML();
+}
+
+function resetForm(){
+  formData = {};
+  document.getElementById('sheetPicker').value = '';
+  renderForm(); renderPreview();
+}
+
+function templateKey(){
+  return docType==='tds' ? 'tds_template' : ('msds_template_' + msdsMode);
+}
+
+function saveTemplate(){
+  try{
+    localStorage.setItem(templateKey(), JSON.stringify(formData));
+    showTemplateNote('✔ Đã lưu mẫu hiện tại cho loại tài liệu này. Lần sau bấm "Tải mẫu" để dùng lại.', true);
+  }catch(e){
+    showTemplateNote('Không lưu được mẫu: ' + e.message, false);
+  }
+}
+
+function loadTemplate(){
+  const raw = localStorage.getItem(templateKey());
+  if(!raw){ showTemplateNote('Chưa có mẫu nào được lưu cho loại tài liệu này.', false); return; }
+  if(Object.keys(formData).length && !confirm('Tải mẫu sẽ ghi đè nội dung đang nhập hiện tại. Tiếp tục?')) return;
+  formData = JSON.parse(raw);
+  renderForm(); renderPreview();
+  showTemplateNote('✔ Đã tải mẫu đã lưu. Bạn có thể chỉnh sửa/thêm/bớt tự do.', true);
+}
+
+function showTemplateNote(msg, ok){
+  const el = document.getElementById('templateNote');
+  el.textContent = msg;
+  el.style.color = ok ? '#0f6e56' : '#a32d2d';
+}
+
+function exportWord(){
+  const fileTitle = (formData.name || (docType==='tds'?'TDS':'MSDS')).replace(/[^\p{L}\p{N}_\- ]/gu,'').trim() || 'tai_lieu';
+  const contentHTML = document.getElementById('preview').innerHTML;
+
+  const preHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset='utf-8'><title>${fileTitle}</title>
+    <!--[if gte mso 9]>
+    <xml>
+      <w:WordDocument>
+        <w:View>Print</w:View>
+        <w:Zoom>100</w:Zoom>
+        <w:DoNotOptimizeForBrowser/>
+      </w:WordDocument>
+    </xml>
+    <![endif]-->
+    <style>
+      @page { size: A4; margin: 2cm; }
+      body{font-family:'Times New Roman',serif;color:#111;font-size:13pt;}
+      h1{font-size:20pt;text-align:center;color:#2E4F3B;margin-bottom:6pt;}
+      h2{font-size:14pt;color:#2E4F3B;border-bottom:1.5pt solid #3F6B4F;padding-bottom:4pt;margin-top:18pt;}
+      .sub-center{text-align:center;font-size:16pt;font-weight:bold;color:#fff;background:#3F6B4F;padding:10pt;margin-bottom:16pt;}
+      table{width:100%;border-collapse:collapse;margin-top:6pt;font-size:11pt;}
+      td,th{border:1pt solid #999;padding:6pt 8pt;text-align:left;vertical-align:top;}
+      th{background:#eef3ee;width:38%;}
+      .sec-body{font-size:11pt;line-height:1.5;padding:4pt 2pt;}
+      img{max-width:300pt;}
+      .editable-table td, .editable-table th{border:1pt solid #999;}
+    </style></head><body>`;
+  const postHtml = "</body></html>";
+  const fullHtml = preHtml + contentHTML + postHtml;
+
+  const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${docType.toUpperCase()}_${fileTitle}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// init
+renderForm();
+renderPreview();
+</script>
+</body>
+</html>
